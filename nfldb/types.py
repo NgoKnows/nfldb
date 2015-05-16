@@ -8,6 +8,8 @@ from collections import defaultdict
 import datetime
 import itertools
 
+from six import itervalues, iterkeys
+
 import enum
 
 from psycopg2.extensions import AsIs, ISQLQuote
@@ -1079,7 +1081,7 @@ class SQLPlayPlayer (sql.Entity):
     _sql_tables = {
         'primary': ['gsis_id', 'drive_id', 'play_id', 'player_id'],
         'managed': ['play_player'],
-        'tables': [('play_player', ['team'] + _player_categories.keys())],
+        'tables': [('play_player', ['team'] + list(_player_categories.keys()))],
         'derived': ['offense_yds', 'offense_tds', 'defense_tds', 'points'],
     }
 
@@ -1200,7 +1202,7 @@ class PlayPlayer (SQLPlayPlayer):
         dbpp.play_id = p.play_id
         dbpp.player_id = pp.playerid
         dbpp.team = team
-        for k in _player_categories.keys():
+        for k in iterkeys(_player_categories):
             if pp._stats.get(k, 0) != 0:
                 setattr(dbpp, k, pp._stats[k])
 
@@ -1279,7 +1281,7 @@ class PlayPlayer (SQLPlayPlayer):
         """The set of non-zero statistical fields set."""
         if self._fields is None:
             self._fields = set()
-            for k in _player_categories.keys():
+            for k in iterkeys(_player_categories):
                 if getattr(self, k, 0) != 0:
                     self._fields.add(k)
         return self._fields
@@ -1423,8 +1425,8 @@ class SQLPlay (sql.Entity):
         'tables': [
             ('play', ['time', 'pos_team', 'yardline', 'down', 'yards_to_go',
                       'description', 'note', 'time_inserted', 'time_updated',
-                      ] + _play_categories.keys()),
-            ('agg_play', _player_categories.keys()),
+                      ] + list(_play_categories.keys())),
+            ('agg_play', list(_player_categories.keys())),
         ],
         'derived': ['offense_yds', 'offense_tds', 'defense_tds', 'points',
                     'game_date'],
@@ -1546,7 +1548,7 @@ class Play (SQLPlay):
         dbplay.yards_to_go = p.yards_togo
         dbplay.description = p.desc
         dbplay.note = p.note
-        for k in _play_categories.keys():
+        for k in iterkeys(_play_categories):
             if p._stats.get(k, 0) != 0:
                 setattr(dbplay, k, p._stats[k])
         # Note that `Play` objects also normally contain aggregated
