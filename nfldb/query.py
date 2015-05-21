@@ -17,7 +17,6 @@ try:
 except NameError:
     strtype = str
 
-
 __pdoc__ = {}
 
 
@@ -169,11 +168,12 @@ def player_search(db, full_name, team=None, position=None,
     results = []
     with Tx(db) as cursor:
         if team is not None:
-            qteam = cursor.mogrify('team = %s', (team,))
+            qteam = cursor.mogrify('team = %s', (team,)).decode('utf-8')
         if position is not None:
-            qposition = cursor.mogrify('position = %s', (position,))
+            qposition = cursor.mogrify('position = %s',
+                    (position,)).decode('utf-8')
 
-        fuzzy_filled = cursor.mogrify(fuzzy, (full_name,))
+        fuzzy_filled = cursor.mogrify(fuzzy, (full_name,)).decode('utf-8')
         columns = types.Player._sql_select_fields(types.Player.sql_fields())
         columns.append('%s AS distance' % fuzzy_filled)
         q = q.format(
@@ -350,11 +350,11 @@ class Comparison (Condition):
         if isinstance(self.value, tuple) or isinstance(self.value, list):
             assert self.operator == '=', \
                 'Disjunctions must use "=" for column "%s"' % field
-            vals = [cursor.mogrify('%s', (v,)) for v in self.value]
+            vals = [cursor.mogrify('%s', (v,)).decode('utf-8') for v in self.value]
             return '%s IN (%s)' % (field, ', '.join(vals))
         else:
             paramed = '%s %s %s' % (field, self.operator, '%s')
-            return cursor.mogrify(paramed, (self.value,))
+            return cursor.mogrify(paramed, (self.value,)).decode('utf-8')
 
 
 def QueryOR(db):
@@ -982,7 +982,6 @@ class Query (Condition):
                 having=sql.ands(having),
                 order=self._sorter(AggPP).sql(),
             )
-
             init = AggPP.from_row_dict
             cur.execute(q)
             for row in cur.fetchall():
